@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
         string filename = argv[3];
 
         // Build a command string to show in output
-        string cmd = "sim " + predType + " " + to_string(m) + " " + filename;
+        string cmd = "./sim " + predType + " " + to_string(m) + " " + filename;
 
         // Create Bimodal Predictor
         BimodalPredictor predictor(m);
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
         string filename = argv[4];
 
         // Build a command string to show in output
-        string cmd = "sim " + predType + " " + to_string(m) + " " + to_string(n) + " " + filename;
+        string cmd = "./sim " + predType + " " + to_string(m) + " " + to_string(n) + " " + filename;
 
         // Create GShare Predictor
         GSharePredictor predictor(n, m);  // or GSharePredictor(M1, N) depending on your constructor ordering
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
         string filename = argv[6];
 
         // Build a command string to show in output
-        string cmd = "sim " + predType + " " +
+        string cmd = "./sim " + predType + " " +
                      to_string(K) + " " +
                      to_string(M1) + " " +
                      to_string(N) + " " +
