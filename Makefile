@@ -4,10 +4,10 @@ WARN = -Wall
 CFLAGS = $(OPT) $(WARN)
 
 # List all your .cpp files here (source files, excluding header files)
-SIM_SRC = bimodal.cpp
+SIM_SRC = main.cpp bimodal.cpp gshare.cpp hybrid.cpp
 
 # List corresponding compiled object files here (.o files)
-SIM_OBJ = bimodal.o
+SIM_OBJ = main.o bimodal.o gshare.o hybrid.o
 #################################
 
 # default rule
