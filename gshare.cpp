@@ -96,44 +96,44 @@ class GSharePredictor{
 };
 
 
-int main(int argc, char* argv[]){
+// int main(int argc, char* argv[]){
     
-    string branch_pred_type=argv[1];
+//     string branch_pred_type=argv[1];
     
-    int m = stoi(argv[2]);
-    int n = stoi(argv[3]);
+//     int m = stoi(argv[2]);
+//     int n = stoi(argv[3]);
 
-    string filename = argv[4];
-    string cmd = "sim " + branch_pred_type + " " + argv[2] + " " + argv[3] + " " + filename ;
+//     string filename = argv[4];
+//     string cmd = "sim " + branch_pred_type + " " + argv[2] + " " + argv[3] + " " + filename ;
     
     
-    ifstream traceFile;
+//     ifstream traceFile;
 
-    GSharePredictor predictor(n, m);
-    string line;
-    traceFile.open("traces/"+filename);
+//     GSharePredictor predictor(n, m);
+//     string line;
+//     traceFile.open("traces/"+filename);
     
     
-    if(traceFile.is_open()){
-        while (getline(traceFile, line))
-        {
-            // predictor.predict();
-            stringstream ss(line);
-            string word;
-            vector<string> address_and_label;
+//     if(traceFile.is_open()){
+//         while (getline(traceFile, line))
+//         {
+//             // predictor.predict();
+//             stringstream ss(line);
+//             string word;
+//             vector<string> address_and_label;
 
-            while (ss >> word) { // Extract words separated by spaces
-                address_and_label.push_back(word);
+//             while (ss >> word) { // Extract words separated by spaces
+//                 address_and_label.push_back(word);
         
-            }
-            predictor.predict(address_and_label[0], address_and_label[1]);
-            // cout << address_and_label[0] << " " << address_and_label[1] << "\n";
-        }
-        traceFile.close();
-        predictor.generate_val_traces(cmd);
-    }
-    else{
-        cout << "Unable to open trace file\n";
-    }
+//             }
+//             predictor.predict(address_and_label[0], address_and_label[1]);
+//             // cout << address_and_label[0] << " " << address_and_label[1] << "\n";
+//         }
+//         traceFile.close();
+//         predictor.generate_val_traces(cmd);
+//     }
+//     else{
+//         cout << "Unable to open trace file\n";
+//     }
     
-}
+// }

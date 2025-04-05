@@ -78,41 +78,41 @@ class BimodalPredictor{
 };
 
 
-int main(int argc, char* argv[]){
+// int main(int argc, char* argv[]){
     
-    string branch_pred_type=argv[1];
-    int m = stoi(argv[2]);
+//     string branch_pred_type=argv[1];
+//     int m = stoi(argv[2]);
 
-    string filename = argv[3];
-    string cmd = "sim " + branch_pred_type + " " + argv[2] + " " + filename ;
+//     string filename = argv[3];
+//     string cmd = "sim " + branch_pred_type + " " + argv[2] + " " + filename ;
     
     
-    ifstream traceFile;
+//     ifstream traceFile;
 
-    BimodalPredictor predictor(m);
-    string line;
-    traceFile.open("traces/"+filename);
+//     BimodalPredictor predictor(m);
+//     string line;
+//     traceFile.open("traces/"+filename);
     
     
-    if(traceFile.is_open()){
-        while (getline(traceFile, line))
-        {
-            // predictor.predict();
-            stringstream ss(line);
-            string word;
-            vector<string> address_and_label;
+//     if(traceFile.is_open()){
+//         while (getline(traceFile, line))
+//         {
+//             // predictor.predict();
+//             stringstream ss(line);
+//             string word;
+//             vector<string> address_and_label;
 
-            while (ss >> word) { // Extract words separated by spaces
-                address_and_label.push_back(word);
+//             while (ss >> word) { // Extract words separated by spaces
+//                 address_and_label.push_back(word);
         
-            }
-            predictor.predict(address_and_label[0], address_and_label[1]);
-                }
-        traceFile.close();
-        predictor.generate_val_traces(cmd);
-    }
-    else{
-        cout << "Unable to open trace file\n";
-    }
+//             }
+//             predictor.predict(address_and_label[0], address_and_label[1]);
+//                 }
+//         traceFile.close();
+//         predictor.generate_val_traces(cmd);
+//     }
+//     else{
+//         cout << "Unable to open trace file\n";
+//     }
     
-}
+// }

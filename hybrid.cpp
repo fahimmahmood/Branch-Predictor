@@ -250,57 +250,57 @@ public:
 // main() for the hybrid simulator
 // Usage: sim hybrid <K> <M1> <N> <M2> <tracefile>
 // --------------------------------------------------------------
-int main(int argc, char* argv[]) {
-    if (argc < 6) {
-        cout << "Usage: sim hybrid <K> <M1> <N> <M2> <tracefile>\n";
-        return 1;
-    }
+// int main(int argc, char* argv[]) {
+//     if (argc < 6) {
+//         cout << "Usage: sim hybrid <K> <M1> <N> <M2> <tracefile>\n";
+//         return 1;
+//     }
 
-    // parse command-line arguments
-    string branch_pred_type = argv[1];  // should be "hybrid"
-    int K  = stoi(argv[2]);
-    int M1 = stoi(argv[3]);
-    int N  = stoi(argv[4]);
-    int M2 = stoi(argv[5]);
-    string filename = argv[6];
+//     // parse command-line arguments
+//     string branch_pred_type = argv[1];  // should be "hybrid"
+//     int K  = stoi(argv[2]);
+//     int M1 = stoi(argv[3]);
+//     int N  = stoi(argv[4]);
+//     int M2 = stoi(argv[5]);
+//     string filename = argv[6];
 
-    // build command string for reporting
-    string cmd = "sim " + branch_pred_type + " " +
-                 to_string(K) + " " +
-                 to_string(M1) + " " +
-                 to_string(N) + " " +
-                 to_string(M2) + " " +
-                 filename;
+//     // build command string for reporting
+//     string cmd = "sim " + branch_pred_type + " " +
+//                  to_string(K) + " " +
+//                  to_string(M1) + " " +
+//                  to_string(N) + " " +
+//                  to_string(M2) + " " +
+//                  filename;
 
-    // open trace file
-    ifstream traceFile;
-    traceFile.open("traces/" + filename);
+//     // open trace file
+//     ifstream traceFile;
+//     traceFile.open("traces/" + filename);
 
-    // Create HybridPredictor
-    HybridPredictor predictor(K, M1, N, M2);
+//     // Create HybridPredictor
+//     HybridPredictor predictor(K, M1, N, M2);
 
-    if (traceFile.is_open()) {
-        string line;
-        while (getline(traceFile, line)) {
-            stringstream ss(line);
-            vector<string> address_and_label;
-            string token;
-            while (ss >> token) {
-                address_and_label.push_back(token);
-            }
-            if (address_and_label.size() == 2) {
-                // address_and_label[0] = PC (hex), [1] = "t" or "n"
-                predictor.predict(address_and_label[0], address_and_label[1]);
-            }
-        }
-        traceFile.close();
+//     if (traceFile.is_open()) {
+//         string line;
+//         while (getline(traceFile, line)) {
+//             stringstream ss(line);
+//             vector<string> address_and_label;
+//             string token;
+//             while (ss >> token) {
+//                 address_and_label.push_back(token);
+//             }
+//             if (address_and_label.size() == 2) {
+//                 // address_and_label[0] = PC (hex), [1] = "t" or "n"
+//                 predictor.predict(address_and_label[0], address_and_label[1]);
+//             }
+//         }
+//         traceFile.close();
 
-        // Print results
-        predictor.generate_val_traces(cmd);
-    }
-    else {
-        cout << "Unable to open trace file\n";
-    }
+//         // Print results
+//         predictor.generate_val_traces(cmd);
+//     }
+//     else {
+//         cout << "Unable to open trace file\n";
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
