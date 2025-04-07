@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iomanip>
+#include "smith.cpp"
 #include "bimodal.cpp"  // or place the bimodal class definition here
 #include "gshare.cpp"   // or place the gshare class definition here
 #include "hybrid.cpp"   // or place the hybrid class definition here
@@ -15,6 +16,7 @@ int main(int argc, char* argv[])
     // Check if at least the predictor type is given
     if (argc < 2) {
         cerr << "Usage:\n"
+             << "  sim smith <size> <tracefile>\n"
              << "  sim bimodal <M2> <tracefile>\n"
              << "  sim gshare <M1> <N> <tracefile>\n"
              << "  sim hybrid <K> <M1> <N> <M2> <tracefile>\n";
@@ -25,10 +27,71 @@ int main(int argc, char* argv[])
     string predType = argv[1];
 
     // ------------------------------------------------------------------
+    // N-bit Smith
+    //   sim smith <size> <tracefile>
+    // ------------------------------------------------------------------
+    if (predType == "smith") {
+        // Check the argument structure
+        if (argc != 4) {
+            cerr << "ERROR: bad arguments: ./sim smith <size (#bits)> <trace file>" << endl;
+            return 1;
+        }
+
+        int size = atoi(argv[2]);
+        string traceFile = argv[3];
+
+        // Print benchmark input settings
+        cout << "COMMAND\n./sim smith " << argv[2] << " " << argv[3] << endl;
+        
+        // Open the trace file
+        ifstream file("traces/" + traceFile);
+        if (!file) {
+            cerr << "ERROR: couldn't open trace file" << endl;
+            return 1;
+        }
+
+        // Instantiate the predictor and performance metrics
+        NBitSmithPredictor smith(size);
+        int predictions = 0;
+        int mispredictions = 0;
+
+        // Read from the trace file
+        string trace;
+        char predicted;
+        while(getline(file, trace)) {
+            // Isolate the address and result
+            istringstream iss(trace);
+            string address, result;
+            iss >> address >> result;
+
+            // Make a prediction
+            predicted = smith.predict();
+
+            // Update the predictor
+            smith.update(result[0]);
+
+            // Evaluate our preformance metrics
+            predictions++;
+            if (predicted != result[0]) {
+                mispredictions++;
+            }
+        }
+
+        file.close();
+
+        // Print benchmark results
+        cout << fixed << setprecision(2)
+             << "OUTPUT\nnumber of predictions:\t\t" << predictions << endl
+             << "number of mispredictions:\t" << mispredictions << endl
+             << "misprediction rate:\t\t" << ((mispredictions * 100.0f) / predictions) << "%\n"
+             << "FINAL COUNTER CONTENT:\t\t" << smith.dumpState() << endl;
+    }
+
+    // ------------------------------------------------------------------
     // Bimodal
     //   sim bimodal <M2> <tracefile>
     // ------------------------------------------------------------------
-    if (predType == "bimodal") {
+    else if (predType == "bimodal") {
         if (argc < 4) {
             cerr << "Usage: sim bimodal <M2> <tracefile>\n";
             return 1;
@@ -170,6 +233,7 @@ int main(int argc, char* argv[])
     else {
         cerr << "Unknown predictor type: " << predType << "\n";
         cerr << "Usage:\n"
+             << "  sim smith <size> <tracefile>\n"
              << "  sim bimodal <M2> <tracefile>\n"
              << "  sim gshare <M1> <N> <tracefile>\n"
              << "  sim hybrid <K> <M1> <N> <M2> <tracefile>\n";
