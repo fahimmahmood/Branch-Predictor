@@ -1,0 +1,32 @@
+# Compiler and flags
+CC = g++
+OPT = -O3
+WARN = -Wall
+CFLAGS = $(OPT) $(WARN)
+
+# Source files
+SRC = spectre_attack.cpp bimodal_predictor.cpp 
+OBJ = $(SRC:.cpp=.o)
+
+# Output binary
+BIN = spectre_sim
+
+# Default target
+all: $(BIN)
+	@echo "Build complete. Run with ./spectre_sim bimodal <m> or ./spectre_sim gshare <n> <m>"
+
+# Build rule
+$(BIN): $(OBJ)
+	$(CC) $(CFLAGS) -o $(BIN) $(OBJ)
+
+# Generic rule to compile .cpp to .o
+.cpp.o:
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Clean up object files and binary
+clean:
+	rm -f *.o $(BIN)
+
+# Remove only .o files
+clobber:
+	rm -f *.o
