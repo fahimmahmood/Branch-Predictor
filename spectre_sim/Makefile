@@ -5,7 +5,7 @@ WARN = -Wall
 CFLAGS = $(OPT) $(WARN)
 
 # Source files
-SRC = spectre_attack.cpp bimodal_predictor.cpp gshare.cpp
+SRC = spectre_attack.cpp bimodal_predictor.cpp gshare.cpp hybrid.cpp
 OBJ = $(SRC:.cpp=.o)
 
 # Output binary
@@ -15,7 +15,8 @@ BIN = sim
 all: $(BIN)
 	@echo "Build complete. \
 	Run with ./sim bimodal <m> <trace_file> <spectre_attack_to_initiate_attack> or \
-	./sim gshare <n> <m> <trace_file> <spectre_attack_to_initiate_attack>"
+	./sim gshare <n> <m> <trace_file> <spectre_attack_to_initiate_attack>" or \
+	./sim hybrid <k> <m1> <n> <m2> <trace_file> <spectre_attack_to_initiate_attack>"
 
 # Build rule
 $(BIN): $(OBJ)

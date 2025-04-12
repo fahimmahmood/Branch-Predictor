@@ -11,6 +11,7 @@
 
 #include "bimodal_predictor.h"
 #include "gshare.h"
+#include "hybrid.cpp"
 
 using namespace std;
 
@@ -158,6 +159,81 @@ int main(int argc, char* argv[]) {
             ifstream traceFile;
 
             GSharePredictor predictor(n, m);
+            string line;
+            traceFile.open("../traces/"+filename);
+            
+            
+            if(traceFile.is_open()){
+                while (getline(traceFile, line))
+                {
+                    // predictor.predict();
+                    stringstream ss(line);
+                    string word;
+                    vector<string> address_and_label;
+
+                    while (ss >> word) { // Extract words separated by spaces
+                        address_and_label.push_back(word);
+                
+                    }
+                    predictor.predict(address_and_label[0], address_and_label[1]);
+                    // cout << address_and_label[0] << " " << address_and_label[1] << "\n";
+                }
+                traceFile.close();
+                predictor.generate_val_traces(cmd);
+            }
+            else{
+                cout << "Unable to open trace file\n";
+            }
+        }
+        
+    }
+
+    else if (branch_pred_type=="hybrid"){
+        if (argc < 7) {
+            cerr << "Usage: sim hybrid <K> <M1> <N> <M2> <tracefile>\n";
+            return 1;
+        }
+
+        int K  = stoi(argv[2]);
+        int M1 = stoi(argv[3]);
+        int N  = stoi(argv[4]);
+        int M2 = stoi(argv[5]);
+        string filename = argv[6];
+
+        // Build a command string to show in output
+        string cmd = "./sim " + branch_pred_type + " " +
+                     to_string(K) + " " +
+                     to_string(M1) + " " +
+                     to_string(N) + " " +
+                     to_string(M2) + " " + filename;
+        
+        if(attack){
+            cout << "Attacking.." << "\n";
+            memcpy(secret, "Some Secret Value", strlen("Some Secret Value") + 1);
+
+            HybridPredictor* predictor;
+            predictor = new HybridPredictor(K, M1, N, M2);
+
+            cout << "buffer: " << static_cast<void*>(buffer) << "\n";
+            cout << "secret: " << static_cast<void*>(secret) << "\n";
+
+            for (int i = 0; i < strlen(secret); i++) {
+                ptrdiff_t index_beyond = (secret - (char*)buffer) + i;
+                cout << "\n[Leak attempt for byte " << i << "]\n";
+                flushSideChannel();
+                spectreAttack(static_cast<size_t>(index_beyond), predictor);
+                reloadSideChannel();
+            }
+
+
+            // predictor->generate_val_traces("sim gshare " + to_string(n) + " " + to_string(m) + " spectre");
+            delete predictor;
+        }
+
+        else{
+            ifstream traceFile;
+
+            HybridPredictor predictor(K, M1, N, M2);
             string line;
             traceFile.open("../traces/"+filename);
             
