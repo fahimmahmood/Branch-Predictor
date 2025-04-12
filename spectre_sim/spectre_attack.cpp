@@ -5,10 +5,15 @@
 #include <cstring>
 #include <ctime>
 #include <x86intrin.h>
+#include<fstream>
+#include<sstream>
+#include<typeinfo>
 
 #include "bimodal_predictor.h"
+#include "gshare.h"
 
 using namespace std;
+
 
 uint8_t memory[100];
 uint8_t* buffer = memory;
@@ -20,7 +25,7 @@ unsigned int bound_upper = 9;
 #define CACHE_HIT_THRESHOLD (80)
 #define DELTA 1024
 
-BimodalPredictor* predictor;
+// BimodalPredictor* predictor;
 
 void flushSideChannel() {
     for (int i = 0; i < 256; i++) {
@@ -49,10 +54,13 @@ void reloadSideChannel() {
     }
 }
 
-void spectreAttack(size_t index_beyond) {
+template<typename T>
+void spectreAttack(size_t index_beyond, T predictor) {
+    
     char pc[32];
     for (int i = 0; i < 10; i++) {
-        sprintf(pc, "%lx", (uintptr_t)&spectreAttack);
+        // sprintf(pc, "%lx", (uintptr_t)(static_cast<void (*)(size_t)>(spectreAttack)));
+        sprintf(pc, "%lx", reinterpret_cast<uintptr_t>(__builtin_return_address(0)));
         predictor->predict(pc, "t");
         volatile uint8_t temp = buffer[i];
     }
@@ -65,8 +73,10 @@ void spectreAttack(size_t index_beyond) {
 
     for (volatile int z = 0; z < 100; z++) {}
 
-    sprintf(pc, "%lx", (uintptr_t)&spectreAttack);
+    // sprintf(pc, "%lx", (uintptr_t)(static_cast<void (*)(size_t)>(spectreAttack)));
+    sprintf(pc, "%lx", reinterpret_cast<uintptr_t>(__builtin_return_address(0)));
     predictor->predict(pc, "n");
+
 
     if (predictor->getLastPrediction() == "t") {
         uint8_t s = *((uint8_t*)buffer + index_beyond);
@@ -76,42 +86,108 @@ void spectreAttack(size_t index_beyond) {
 }
 
 int main(int argc, char* argv[]) {
-    int m = 6;
-    if (argc >= 2) {
-        m = atoi(argv[1]);
+    string branch_pred_type=argv[1];
+    bool attack = false;
+    for (int i = 0; i < argc; ++i) {
+        string word = argv[i];
+        if (word == "spectre_attack"){
+            attack = true;
+        }
     }
 
-    memcpy(secret, "Some Secret Value", strlen("Some Secret Value") + 1);
+    if (branch_pred_type=="bimodal"){
+        int m = 6;
+        if (argc >= 2) {
+            m = atoi(argv[1]);
+        }
+        BimodalPredictor* predictor;
 
-    predictor = new BimodalPredictor(m);
-    // flushSideChannel();
+        if(attack){
+        memcpy(secret, "Some Secret Value", strlen("Some Secret Value") + 1);
 
-    // ptrdiff_t index_beyond = secret - (char*)buffer;
-    // if (index_beyond <= 0 || index_beyond > 64) {
-    //     cerr << "Error: index_beyond is out of safe bounds: " << index_beyond << "\n";
-    //     delete predictor;
-    //     return 1;
-    // }
+        predictor = new BimodalPredictor(m);
 
-    // cout << "buffer: " << static_cast<void*>(buffer) << "\n";
-    // cout << "secret: " << static_cast<void*>(secret) << "\n";
-    // cout << "index of secret (out of bound): " << index_beyond << "\n";
+        cout << "buffer: " << static_cast<void*>(buffer) << "\n";
+        cout << "secret: " << static_cast<void*>(secret) << "\n";
 
-    // spectreAttack(static_cast<size_t>(index_beyond));
-    // reloadSideChannel();
-    cout << "buffer: " << static_cast<void*>(buffer) << "\n";
-    cout << "secret: " << static_cast<void*>(secret) << "\n";
+        for (int i = 0; i < strlen(secret); i++) {
+            ptrdiff_t index_beyond = (secret - (char*)buffer) + i;
+            cout << "\n[Leak attempt for byte " << i << "]\n";
+            flushSideChannel();
+            spectreAttack(static_cast<size_t>(index_beyond),predictor);
+            reloadSideChannel();
+        }
 
-    for (int i = 0; i < strlen(secret); i++) {
-        ptrdiff_t index_beyond = (secret - (char*)buffer) + i;
-        cout << "\n[Leak attempt for byte " << i << "]\n";
-        flushSideChannel();
-        spectreAttack(static_cast<size_t>(index_beyond));
-        reloadSideChannel();
+
+        predictor->generate_val_traces("sim bimodal " + to_string(m) + " spectre");
+        delete predictor;
+        }
     }
 
+    else if (branch_pred_type=="gshare"){
+        int m = stoi(argv[2]);
+        int n = stoi(argv[3]);
 
-    predictor->generate_val_traces("sim bimodal " + to_string(m) + " spectre");
-    delete predictor;
+        string filename = argv[4];
+        string cmd = "sim " + branch_pred_type + " " + argv[2] + " " + argv[3] + " " + filename ;
+        
+        if(attack){
+            cout << "Attacking.." << "\n";
+            memcpy(secret, "Some Secret Value", strlen("Some Secret Value") + 1);
+
+            GSharePredictor* predictor;
+            predictor = new GSharePredictor(n,m);
+
+            cout << "buffer: " << static_cast<void*>(buffer) << "\n";
+            cout << "secret: " << static_cast<void*>(secret) << "\n";
+
+            for (int i = 0; i < strlen(secret); i++) {
+                ptrdiff_t index_beyond = (secret - (char*)buffer) + i;
+                cout << "\n[Leak attempt for byte " << i << "]\n";
+                flushSideChannel();
+                spectreAttack(static_cast<size_t>(index_beyond), predictor);
+                reloadSideChannel();
+            }
+
+
+            predictor->generate_val_traces("sim gshare " + to_string(n) + " " + to_string(m) + " spectre");
+            delete predictor;
+        }
+
+        else{
+            ifstream traceFile;
+
+            GSharePredictor predictor(n, m);
+            string line;
+            traceFile.open("../traces/"+filename);
+            
+            
+            if(traceFile.is_open()){
+                while (getline(traceFile, line))
+                {
+                    // predictor.predict();
+                    stringstream ss(line);
+                    string word;
+                    vector<string> address_and_label;
+
+                    while (ss >> word) { // Extract words separated by spaces
+                        address_and_label.push_back(word);
+                
+                    }
+                    predictor.predict(address_and_label[0], address_and_label[1]);
+                    // cout << address_and_label[0] << " " << address_and_label[1] << "\n";
+                }
+                traceFile.close();
+                predictor.generate_val_traces(cmd);
+            }
+            else{
+                cout << "Unable to open trace file\n";
+            }
+        }
+        
+    }
+    
+    
+    
     return 0;
 }
