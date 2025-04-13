@@ -1,4 +1,4 @@
-class NBitSmithPredictor {
+class NBitSmithPredictor{
     private:
         int counter;
         int maximum;
@@ -14,21 +14,21 @@ class NBitSmithPredictor {
 
         // predict
         //      Make a prediction (t/n) based on the current counter state
-        char predict() {
+        const std::string getLastPrediction() {
             if (this->counter >= this->threshold) {
                 // predict taken
-                return 't';
+                return "t";
             }
             else {
                 // predict not taken
-                return 'n';
+                return "n";
             }
         }
 
         // update
         //      Update the counter state given an actual branch result
-        void update(char result) {
-            if (result == 't') {
+        void predict(const std::string& pc_address, const std::string& label) {
+            if (label == "t") {
                 // increment counter if branch was taken and counter isn't saturated
                 if (this->counter < this->maximum) {
                     this->counter++;

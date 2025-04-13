@@ -1,19 +1,20 @@
 CC = g++
-OPT = -O3
+OPT = -O0
 WARN = -Wall
-CFLAGS = $(OPT) $(WARN)
+STD = -std=c++11
+CFLAGS = $(OPT) $(WARN) $(STD)
 
 # List all your .cpp files here (source files, excluding header files)
-SIM_SRC = main.cpp smith.cpp bimodal.cpp gshare.cpp hybrid.cpp
+SIM_SRC = spectre_attack.cpp
 
 # List corresponding compiled object files here (.o files)
-SIM_OBJ = main.o smith.o bimodal.o gshare.o hybrid.o
+SIM_OBJ = spectre_attack.o
 #################################
 
 # default rule
 
 all: sim
-	@echo "my work is done here..."
+	@echo "Nothing to do."
 
 
 # rule for making sim

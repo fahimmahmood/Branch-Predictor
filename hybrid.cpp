@@ -160,6 +160,7 @@ private:
 
     int mispredictions;
     int num_predictions;
+    string final_pred;
 
 public:
     HybridPredictor(int K, int M1, int N, int M2)
@@ -185,7 +186,7 @@ public:
 
         // Step (3): final prediction based on chooser
         int cval = chooser[chooser_index];
-        string final_pred = (cval >= 2) ? gshare_pred : bimodal_pred;
+        final_pred = (cval >= 2) ? gshare_pred : bimodal_pred;
 
         // Count misprediction
         num_predictions++;
@@ -243,6 +244,9 @@ public:
         // Then GShare, then Bimodal
         gshare.printFinalContents();
         bimodal.printFinalContents();
+    }
+    string getLastPrediction() const {
+        return final_pred;
     }
 };
 
