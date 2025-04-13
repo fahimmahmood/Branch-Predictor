@@ -20,7 +20,7 @@ all: sim
 # rule for making sim
 
 sim: $(SIM_OBJ)
-	$(CC) -o sim $(CFLAGS) $(SIM_OBJ) -lm
+	$(CC) -o spectre_sim $(CFLAGS) $(SIM_OBJ) -lm
 	@echo "-----------DONE WITH SIM-----------"
 
 

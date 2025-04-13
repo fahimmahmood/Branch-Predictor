@@ -19,11 +19,11 @@ using namespace std;
 
 #define OOB_ARRAY_SIZE 16           // The out-of-bounds array size is arbitrary
 #define CACHE_LINE_PADDING 512      // Modern caches have line width = 64 bytes; 512 is simply to guarantee no two hits are on the same line, since 512 >> 64
-#define SECRET_SIZE 27              // Secret string length is also arbitrary
+#define SECRET_SIZE 28              // Secret string length is also arbitrary
 
-#define TRAINING_ITERATIONS 10      // The number of iterations performed to train the branch predictor
-#define CACHE_HIT_THRESHOLD_DEFAULT 40 // The default cache hit timing threshold in ticks
-#define ATTEMPTS_DEFAULT 5000       // The number of successive attempts used to crack a single byte
+#define TRAINING_ITERATIONS_DEFAULT 10  // The number of iterations performed to train the branch predictor
+#define CACHE_HIT_THRESHOLD_DEFAULT 40  // The default cache hit timing threshold in ticks
+#define ATTEMPTS_DEFAULT 5000           // The number of successive attempts used to crack a single byte
 
 // Global simulated memory and side channel instantiations
 __attribute__((aligned(4096))) uint8_t side_channel_array[256 * CACHE_LINE_PADDING]; // evil gcc directive to (hopefully) keep cache lines page-aligned 
@@ -54,7 +54,10 @@ struct SimulatedROMemory {
         return mem_ptr[index];
     }
 };
-char original_secret[SECRET_SIZE] = "I want to pass this class!";
+/* Change the secret string value here */
+char original_secret[SECRET_SIZE] = "AAAAAAAAAAAAAAAAAAAAA";
+/* Change the secret string value here */
+
 struct SimulatedROMemory mem(original_secret);
 
 // leakSecretChar
@@ -62,7 +65,7 @@ struct SimulatedROMemory mem(original_secret);
 //          OOB_index --> the out-of-bounds index
 //          pred --> the branch predictor to test on
 //          cache_hit_threshold --> the maximum cache latency to count as a hit
-uint8_t leakSecretChar(size_t OOB_index, BimodalPredictor& pred, uint64_t cache_hit_threshold, int attempts) {
+uint8_t leakSecretChar(size_t OOB_index, NBitSmithPredictor* pred, uint64_t cache_hit_threshold, int attempts, int training_iterations) {
     // Static pc value for the branch predictors
     char pc[32];
     sprintf(pc, "%lx", (uintptr_t)&leakSecretChar);
@@ -92,8 +95,8 @@ uint8_t leakSecretChar(size_t OOB_index, BimodalPredictor& pred, uint64_t cache_
         }
 
         // (TRAIN) Train the predictor
-        for (i = 0; i < TRAINING_ITERATIONS; i++) {
-            pred.predict(pc, "t");
+        for (i = 0; i < training_iterations; i++) {
+            pred->predict(pc, "t");
         }
 
         // (FLUSH) Flush the side channel from cache
@@ -104,8 +107,8 @@ uint8_t leakSecretChar(size_t OOB_index, BimodalPredictor& pred, uint64_t cache_
         _mm_mfence(); // wait for flush to complete
 
         // (SPECULATIVE EXEC) Simulate speculative execution access
-        pred.predict(pc, "n");
-        if (pred.getLastPrediction() == "t") {
+        pred->predict(pc, "n");
+        if (pred->getLastPrediction() == "t") {
             // The predictor simulated a mispredicted "taken"; so, we force the speculative execution that follows
             //      (ignoring realistic bounds checking due to simulator limitations)
             dummy &= side_channel_array[mem.read(OOB_index) * CACHE_LINE_PADDING];
@@ -152,37 +155,64 @@ uint8_t leakSecretChar(size_t OOB_index, BimodalPredictor& pred, uint64_t cache_
     return first;
 }
 
+// stringDiff
+//      Get the proportional difference between two equal-length strings
+double stringDiff(char* s1, char* s2, int n) {
+    int same = 0;
+    for (int i=0; i<n; i++) {
+        if (s1[i] == s2[i]) same++;
+    }
+
+    return (double)((100.0f * same) / n);
+}
+
 int main(int argc, char* argv[]) {
 
     // Check argument parameters
     uint64_t cache_hit_threshold = CACHE_HIT_THRESHOLD_DEFAULT;
     int attempts = ATTEMPTS_DEFAULT;
-    if (argc == 3) {
+    int training_iterations = TRAINING_ITERATIONS_DEFAULT;
+    int executions = 1;
+    if (argc == 5) {
         cache_hit_threshold = atoi(argv[1]);
         attempts = atoi(argv[2]);
-    } else if (argc == 2) {
-        printf("ERROR: bad usage: ./spectre_sim <cache hit threshold> <# attempts>\n");
+        training_iterations = atoi(argv[3]);
+        executions = atoi(argv[4]);
+    } else if (argc < 5 && argc > 1) {
+        printf("ERROR: bad usage: ./spectre_sim <cache hit threshold> <# attempts per byte> <# training iterations> <# executions>\n");
         return -1;
     }
 
+    // Leak potential analysis variables
+    double total_score = 0;
+
     /* Place the predictor instantiation here */
-    BimodalPredictor p(6);
+    NBitSmithPredictor* p = new NBitSmithPredictor(4);
     /* Place the predictor instantiation here */
 
-    int ptr = OOB_ARRAY_SIZE;
-    uint8_t secret[SECRET_SIZE];
+    int ptr;
+    char secret[SECRET_SIZE];
     uint8_t c;
+    for (int t = 0; t < executions; t ++) {
+        delete p;
+        p = new NBitSmithPredictor(4); // Reset history tables
+        ptr = OOB_ARRAY_SIZE; // Reset offset index
 
-    // Try to leak each byte in the secret
-    for (int i = 0; i < SECRET_SIZE - 1; i++) {
-        c = leakSecretChar(ptr, p, cache_hit_threshold, attempts);
-        secret[i] = (c > 31 && c < 127) ? c : ' ';
-        ptr++;
+        // Try to leak each byte in the secret
+        for (int i = 0; i < SECRET_SIZE - 1; i++) {
+            c = leakSecretChar(ptr, p, cache_hit_threshold, attempts, training_iterations);
+            secret[i] = (c > 31 && c < 127) ? c : ' ';
+            ptr++;
+        }
+        secret[SECRET_SIZE - 1] = '\0';
+
+        printf("  Leaked Secret: %s\n", secret);
+        printf("Original Secret: %s\n\n", original_secret);
+
+        total_score += stringDiff(secret, original_secret, SECRET_SIZE);
     }
-    secret[SECRET_SIZE - 1] = '\0';
 
-    printf("  Leaked Secret: %s\n", secret);
-    printf("Original Secret: %s\n", original_secret);
+    printf("Total leak average: %.2f%\n", total_score / executions);
     
     return 0;
 }
