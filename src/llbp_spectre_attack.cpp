@@ -6,10 +6,7 @@
 #include <x86intrin.h>
 
 /* Include the branch predictor definition here */
-#include "smith.cpp"
-#include "bimodal.cpp"
-#include "gshare.cpp"
-#include "hybrid.cpp"
+#include "../LLBP/bpmodels/base_predictor.h"
 /* Include the branch predictor definition here */
 
 using namespace std;
@@ -19,11 +16,11 @@ using namespace std;
 
 #define OOB_ARRAY_SIZE 16           // The out-of-bounds array size is arbitrary
 #define CACHE_LINE_PADDING 512      // Modern caches have line width = 64 bytes; 512 is simply to guarantee no two hits are on the same line, since 512 >> 64
-#define SECRET_SIZE 28              // Secret string length is also arbitrary
+#define SECRET_SIZE 27              // Secret string length is also arbitrary
 
-#define TRAINING_ITERATIONS_DEFAULT 10  // The number of iterations performed to train the branch predictor
+#define TRAINING_ITERATIONS_DEFAULT 16  // The number of iterations performed to train the branch predictor
 #define CACHE_HIT_THRESHOLD_DEFAULT 40  // The default cache hit timing threshold in ticks
-#define ATTEMPTS_DEFAULT 5000           // The number of successive attempts used to crack a single byte
+#define ATTEMPTS_DEFAULT 2500           // The number of successive attempts used to crack a single byte
 
 // Global simulated memory and side channel instantiations
 __attribute__((aligned(4096))) uint8_t side_channel_array[256 * CACHE_LINE_PADDING]; // evil gcc directive to (hopefully) keep cache lines page-aligned 
@@ -55,7 +52,7 @@ struct SimulatedROMemory {
     }
 };
 /* Change the secret string value here */
-char original_secret[SECRET_SIZE] = "AAAAAAAAAAAAAAAAAAAAA";
+char original_secret[SECRET_SIZE] = "AAAAAAAAAAAAAAAAAAAAAAAAAA";
 /* Change the secret string value here */
 
 struct SimulatedROMemory mem(original_secret);
@@ -65,11 +62,13 @@ struct SimulatedROMemory mem(original_secret);
 //          OOB_index --> the out-of-bounds index
 //          pred --> the branch predictor to test on
 //          cache_hit_threshold --> the maximum cache latency to count as a hit
-uint8_t leakSecretChar(size_t OOB_index, NBitSmithPredictor* pred, uint64_t cache_hit_threshold, int attempts, int training_iterations) {
+uint8_t leakSecretChar(size_t OOB_index, BasePredictor* pred, uint64_t cache_hit_threshold, int attempts, int training_iterations) {
     // Static pc value for the branch predictors
-    char pc[32];
-    sprintf(pc, "%lx", (uintptr_t)&leakSecretChar);
-    //why this? sprintf(pc, "%lx", reinterpret_cast<uintptr_t>(__builtin_return_address(0)));
+    // char pc[32];
+    // sprintf(pc, "%lx", (uintptr_t)&leakSecretChar);
+    uint64_t pc = reinterpret_cast<uint64_t>(&leakSecretChar);
+
+    bool res;
 
     // Speculative execution variables
     volatile uint8_t dummy = 0;
@@ -96,7 +95,8 @@ uint8_t leakSecretChar(size_t OOB_index, NBitSmithPredictor* pred, uint64_t cach
 
         // (TRAIN) Train the predictor
         for (i = 0; i < training_iterations; i++) {
-            pred->predict(pc, "t");
+            res=pred->GetPrediction(pc);
+            pred->UpdatePredictor(pc, true /*actual*/, res, 0); 
         }
 
         // (FLUSH) Flush the side channel from cache
@@ -107,8 +107,9 @@ uint8_t leakSecretChar(size_t OOB_index, NBitSmithPredictor* pred, uint64_t cach
         _mm_mfence(); // wait for flush to complete
 
         // (SPECULATIVE EXEC) Simulate speculative execution access
-        pred->predict(pc, "n");
-        if (pred->getLastPrediction() == "t") {
+        res=pred->GetPrediction(pc);
+        pred->UpdatePredictor(pc, false /*actual*/, res, 0); 
+        if (res) {
             // The predictor simulated a mispredicted "taken"; so, we force the speculative execution that follows
             //      (ignoring realistic bounds checking due to simulator limitations)
             dummy &= side_channel_array[mem.read(OOB_index) * CACHE_LINE_PADDING];
@@ -167,6 +168,7 @@ double stringDiff(char* s1, char* s2, int n) {
 }
 
 int main(int argc, char* argv[]) {
+    printf("Running spectre attack sim on external LLBP or TAGE...\n");
 
     // Check argument parameters
     uint64_t cache_hit_threshold = CACHE_HIT_THRESHOLD_DEFAULT;
@@ -187,15 +189,17 @@ int main(int argc, char* argv[]) {
     double total_score = 0;
 
     /* Place the predictor instantiation here */
-    NBitSmithPredictor* p = new NBitSmithPredictor(4);
+    BasePredictor* p = CreateBP("llbp");
     /* Place the predictor instantiation here */
 
     int ptr;
     char secret[SECRET_SIZE];
     uint8_t c;
     for (int t = 0; t < executions; t ++) {
+        printf("ATTEMPT %d: -----------------------------------\n\n", t+1);
+
         delete p;
-        p = new NBitSmithPredictor(4); // Reset history tables
+        p = CreateBP("llbp"); // Reset history tables
         ptr = OOB_ARRAY_SIZE; // Reset offset index
 
         // Try to leak each byte in the secret

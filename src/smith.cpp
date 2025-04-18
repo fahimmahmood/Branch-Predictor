@@ -3,13 +3,13 @@ class NBitSmithPredictor{
         int counter;
         int maximum;
         int threshold;
-        const int initialValue[5] = {0, 1, 2, 4, 8};
+        const int initialValue[7] = {0, 1, 2, 4, 8, 16, 32};
     public:
         // constructor
         NBitSmithPredictor(int size) {
             this->maximum = (1 << size) - 1; // set the saturation value to n-1
             this->threshold = (1 << size) / 2; // set the prediction threshold value to n/2
-            this->counter = (size < 5) ? initialValue[size] : 0; // initialize the counter to a constant corresponding to the predictor size, or 0 if greater
+            this->counter = (size < 7) ? initialValue[size] : 0; // initialize the counter to a constant corresponding to the predictor size, or 0 if greater
         }
 
         // predict
