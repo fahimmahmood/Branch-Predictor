@@ -1,7 +1,9 @@
 # Compiler and flags
 CC = g++
 OPT = -O0
-WARN = -Wall
+WARN = -w # The LLBP repo throws lots of warnings with -Wall
+
+#		This will hold if LLBP repo installed at specified location v
 CFLAGS = $(OPT) $(WARN) -std=c++20 \
     -I../LLBP \
     -I../LLBP/bpmodels \
@@ -20,29 +22,28 @@ LLBP_SRC = \
     ../LLBP/btb/btb.cc \
     ../LLBP/utils/common.cc \
     ../LLBP/utils/fileutils.cc
+#		This will hold if LLBP repo installed at specified location ^
 
 LLBP_OBJ = $(LLBP_SRC:.cc=.o)
 
-# Attack source files and corresponding binaries
-SIMS = \
-    custom_spectre_attack \
-    llbp_spectre_attack \
-    improved_spectre_attack
+# Source file for main simulator
+MAIN_SRC = spectre_simulator.cpp
+MAIN_OBJ = $(MAIN_SRC:.cpp=.o)
 
-BINARIES = $(SIMS:%=%_sim)
+# Output binary name
+TARGET = spectre_sim
 
 # Default target
-all: $(BINARIES)
+all: $(TARGET)
 	@echo "---------------------------------------------------------------------------------------------------------------"
-	@echo "Build complete! Run binaries like:"
-	@echo "  ./llbp_spectre_attack      <cache hit threshold> <# attempts per byte> <# training iterations> <# executions>"
-	@echo "  ./custom_spectre_attack    <cache hit threshold> <# attempts per byte> <# training iterations> <# executions>"
-	@echo "  ./improved_spectre_attack  <cache hit threshold> <# attempts per byte> <# training iterations> <# executions>"
-	@echo "     Default sim values:     <cache hit threshold = 40 ticks> <# attempts per byte = 2500> <# training iterations = 16> <# executions = 1>"
+	@echo "Build complete! Run the binary like:"
+	@echo "  ./$(TARGET) <predictor> <cache hit threshold> <# attempts per byte> <# training iterations> <improved training (y/n)> <# runs>"
+	@echo "     Default Usage: ./$(TARGET) <smith> <40> <2500> <16> <1>"
+	@echo "     List of Predictors:\n- (s)mith\n- (b)imodal\n- (g)share\n- (h)ybrid\n- (t)age\n- (l)lbp\n"
 	@echo "---------------------------------------------------------------------------------------------------------------"
 
-# Pattern rule to build each binary
-%_sim: %.o $(LLBP_OBJ)
+# Link everything into final binary
+$(TARGET): $(MAIN_OBJ) $(LLBP_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ -lz
 
 # Compile rules
@@ -54,7 +55,7 @@ all: $(BINARIES)
 
 # Clean rules
 clean:
-	rm -f *.o $(BINARIES) $(LLBP_OBJ)
+	rm -f *.o $(LLBP_OBJ) $(TARGET)
 
 clobber:
 	rm -f *.o
