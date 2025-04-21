@@ -1,0 +1,175 @@
+CDA 5106 -- Branch Prediction Research Problem Simulation
+Charlie Knipper, Faria Binte Kader, Sagar Sapkota, Sakai Mahmood
+Group 14
+
+Exploring Vulnerabilities of Branch Predictors via Spectre Attack
+    "Spectre Attack" refers to a form of CPU vulnerability which exploits the use of speculative execution
+    and microarchitectural side-channel(s) to access private data. This is usually achieved by using an
+    out-of-bounds access to an area of memory near the private data, and using this access to index a side
+    channel array which will reveal what character was accessed by the out-of-bounds access using cache
+    access times.
+    
+    In our simulator, we:
+        1. Create a struct to simulate read-only memory; this includes an unrelated array to which the
+            out-of-bounds access will be made, and a private string, which we assume is adjacent to
+            the array in this simulated memory. When we make a read-access to the unrelated array,
+            we actually read into the indexed struct so that "out-of-bounds" accesses are possible.
+
+        2. For each byte in the length of the private string, we attempt to leak the byte indexed in
+            the struct at [unrelated_array_size + i], where i iterates from 0 to the length of the
+            secret string.
+        
+        3. To leak a single byte, we begin by iteratively training a given branch predictor. In this
+            simulator, branch prediction and speculative execution are entirely simulated by using a
+            predictor object, which abstractly take in a trace, using a static PC address, and an
+            asserted-true branch outcome. Addiitonally, the predictor object can make a prediction
+            about the next branch, which results in either "taken" or "not taken".
+
+                a. We train the predictor by iteratively feeding it asserted-true "not taken"
+                    branches.
+
+                b. We perform speculative execution by grabbing the predictor's next prediction,
+                    and then executing (in pseudo-code):
+                        predicted_result <-- predictor.get_prediction
+                        if predicted_result does not equal taken:
+                            array[out_of_bounds_index]
+            
+        4. After the predictor is trained, we then iteratively flush each cache-line-separated index
+            in the side-channel array (which is allocated 256 * cache_line_width indices).
+
+        5. Then, we perform the speculative execution and subsequent out-of-bounds memory access as
+            described in section 3b.
+
+        6. Finally, we attempt to access each cache-line-separated index of the side-channel array,
+            (reload) and time the hardware cache access for each index (this part is not simulated,
+            as in, it actually relies on CPU cache data and latencies).
+
+        7. Using the timing data from the side-channel reloading, we can assert what the most-likely
+            character contained within private memory at that index is.
+
+        8. This process is repeated for each index in the range of:
+            [size of unrelated array, size of read only memory struct].
+
+How to Build
+    1. Either run the "clone_LLBP_repo.sh" in it's directory, or clone the LLBP github repository in
+        the references of this document.
+    
+    2. Move to the /src/ directory within this repository, and build using the contained makefile.
+
+    3. Run "./spectre_sim" with no arguments to run a default, test configuration to make sure the
+        setup process was successful.
+
+            Proper output for the default configuration should look something like:
+                $ ./spectre_sim 
+                -----------------------------------------------
+                Running simulator with:
+                        Branch Predictor = Smith (4)
+                        Cache Hit Threshold = 40 ticks
+                        Attempts per Byte = 2500
+                        Training Iterations = 16
+                        Improved Training = n
+                        Consecutive Runs = 1
+                -----------------------------------------------
+                SPECTRE RUN 1: --------------------------------
+
+                Leaked Secret: AAAAAA  )A AAIA 9y I   A  
+                Original Secret: AAAAAAAAAAAAAAAAAAAAAAAAAA
+
+                Average leak accuracy: 44.44%
+
+How to Use
+    The simulator has 6 parameters you can give using the CLI:
+        - Branch Predictor
+            Designates the branch predictor the simulator should use to train and make the
+            speculative execution.
+            Possible options:
+                - (s)mith (default)
+                - (b)imodal
+                - (g)share
+                - (h)ybrid
+                - (t)age
+                - (l)lbp
+        
+        - Cache Hit Threshold
+            Designates the maximum cache access latency that can be counted as a "hit". This will
+            depend on the machine that the simulator is run on. If the simulator provides no
+            output in the "leaked secret" section, it is often because the cache hit threshold
+            is too high (no index in the side-channel can be hit) or too low (many indices in the
+            side-channel will be hit).
+            Possible options:
+                A number of ticks between 0 and uint64_t_max.
+                (For a personal desktop with an i7-14700K in WSL2, optimal threshold was around 90)
+                (For Eustis, optimal threshold was around 60) (default)
+
+        - Attempts per Byte
+            Designates the number of consecutive attempts to leak a single byte within the private
+            string; predictor history is carried over between attempts, but the predictor is trained
+            each attempt.
+            Possible options:
+                A number of attempts between 1 and int_max.
+                A normal value could be anywhere between 1000 and 100000. (default: 2500)
+
+        - Training Iterations
+            Designates the number of iterations a predictor should be trained consecutively.
+            Possible options:
+                A number of iterations between 1 and int_max.
+                A normal value could be anywhere between 10 and 10000. (default: 16)
+
+        - Improved Training
+            Designates whether or not the predictor training should use the default algorithm or
+            an improved algorithm. The improved algorithm increases the number of iterations per
+            attempt by: iterations = (private_index + 1) * training_iterations.
+            Possible options:
+                - 'y'
+                - 'n' (default)
+
+        - Consecutive Runs
+            Designates a number of consecutive attempts to leak the entire private string, and
+            provides an average leak proportion for the set of runs (predictor history is not
+            saved between attempts).
+            Possible options:
+                A number of attempts between 1 and int_max.
+                A normal value could be anywhere between 1 and 100. (default: 1)
+
+Additional Notes
+    The implementations for:
+        - N-bit Smith
+        - Bimodal
+        - GShare
+        - Hybrid (Bimodal-GShare)
+
+    were implemented by the authors of this simulator and additionally created for use in the
+    course machine problems assignment.
+
+    The efficacy of the spectre attack in leaking the private string seemed to vary heavily
+    between machines and environments. Experimentation done on the aforementioned desktop
+    (with an i7-14700K in WSL2) could achieve nearly consistent 100% leakage using:
+        smith, 40 ticks (on old implementation), 100,000 attempts per byte, 16 training iterations,
+        normal training, and 1 consecutive run.
+
+    However, experimentation on Eustis achieved consistently lower leak proportion using the same
+    parameters.
+
+    Finally, the version of the simulator used for the experimentation and data recorded in our
+    paper and presentation utilized the instruction "__rtdscp()" to time cache access latency.
+    Eustis threw an "illegal instruction (core dumped)" from this instruction, presumably
+    either because it is a serialized instruction, or due to hardware limitations.
+    The simulator was partially rewritten to use "__rtdsc()" for timing after this discovery,
+    which meant that our calibrated cache hit thresholds changed as well.
+        Previously, the personal desktop used for testing used a threshold of 40 ticks.
+        Now, the same personal desktop must use a threshold of 90 ticks.
+
+    If the reader has issues reproducing the setup or results of this repository,
+    there exist two debug flags to help diagnose what the issue is:
+        - DEBUG_HIT_THRESHOLD (Cache hit latency validation)
+        - DEBUG_MEMORY_ACCESS (Private memory access validation)
+    These exist in "src/parameters.h".
+
+References
+    https://github.com/crozone/SpectrePoC
+        The side-channel scorer and early-exit condition from the SpectrePoC repository was
+        referenced to aid the consistency of our simulator in leaking private data.
+
+    https://github.com/dhschall/LLBP
+        The implementation of LLBP and TAGE (64k) were directly used from the LLBP repository,
+        and made to be compatible with the simulator for experimentation.

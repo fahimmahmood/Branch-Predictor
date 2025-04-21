@@ -38,8 +38,8 @@ all: $(TARGET)
 	@echo "---------------------------------------------------------------------------------------------------------------"
 	@echo "Build complete! Run the binary like:"
 	@echo "  ./$(TARGET) <predictor> <cache hit threshold> <# attempts per byte> <# training iterations> <improved training (y/n)> <# runs>"
-	@echo "     Default Usage: ./$(TARGET) <smith> <40> <2500> <16> <1>"
-	@echo "     List of Predictors:\n- (s)mith\n- (b)imodal\n- (g)share\n- (h)ybrid\n- (t)age\n- (l)lbp\n"
+	@echo "     Default Usage: ./$(TARGET) <smith> <60> <2500> <16> <n> <1>"
+	@echo "     List of Predictors:\n\t\t- (s)mith\n\t\t- (b)imodal\n\t\t- (g)share\n\t\t- (h)ybrid\n\t\t- (t)age\n\t\t- (l)lbp\n"
 	@echo "---------------------------------------------------------------------------------------------------------------"
 
 # Link everything into final binary
