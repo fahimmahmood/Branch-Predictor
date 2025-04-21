@@ -1,4 +1,6 @@
-//#define DEBUG 1
+//#define DEBUG_HIT_THRESHOLD
+//#define DEBUG_MEMORY_ACCESS
+//#define ALLOW_RDTSCP
 
 #define OOB_ARRAY_SIZE 16           // The out-of-bounds array size is arbitrary
 #define CACHE_LINE_PADDING 512      // Modern caches have line width = 64 bytes; 512 is simply to guarantee no two hits are on the same line, since 512 >> 64
