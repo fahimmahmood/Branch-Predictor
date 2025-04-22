@@ -30,8 +30,8 @@ Exploring Vulnerabilities of Branch Predictors via Spectre Attack
 
                 b. We perform speculative execution by grabbing the predictor's next prediction,
                     and then executing (in pseudo-code):
-                        predicted_result <-- predictor.get_prediction
-                        if predicted_result does not equal taken:
+                        predicted_result <-- predictor.get_prediction(not taken)
+                        if predicted_result equals taken:
                             array[out_of_bounds_index]
             
         4. After the predictor is trained, we then iteratively flush each cache-line-separated index
