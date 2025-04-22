@@ -25,7 +25,7 @@ Exploring Vulnerabilities of Branch Predictors via Spectre Attack
             asserted-true branch outcome. Addiitonally, the predictor object can make a prediction
             about the next branch, which results in either "taken" or "not taken".
 
-                a. We train the predictor by iteratively feeding it asserted-true "not taken"
+                a. We train the predictor by iteratively feeding it asserted-true "taken"
                     branches.
 
                 b. We perform speculative execution by grabbing the predictor's next prediction,
